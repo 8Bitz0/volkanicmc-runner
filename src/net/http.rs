@@ -23,6 +23,7 @@ pub async fn serve(addr: String, port: u16, state: AppState) -> oneshot::Receive
 
         let app = Router::new()
             .route("/", get(root))
+            .route("/check", get(routes::heartbeat::heartbeat))
             .route("/info", get(routes::info::info))
             .route("/auth", get(routes::auth::login))
             .route("/events", get(routes::event::global_event_sub))
