@@ -42,9 +42,6 @@ async fn main() {
         }})
         .init();
 
-    let address = args.address.unwrap_or(String::from("127.0.0.1"));
-    let port = args.port.unwrap_or(8080);
-
     let app_config = Arc::new(Mutex::new(
         match config::ConfigFile::new(args.config_path).await {
             Ok(o) => o,
@@ -54,6 +51,9 @@ async fn main() {
             }
         }
     ));
+
+    let address = args.address.unwrap_or(String::from("127.0.0.1"));
+    let port = args.port.unwrap_or(app_config.lock().await.config.port);
 
     let g_event_tx = global_event::init_channel();
 
