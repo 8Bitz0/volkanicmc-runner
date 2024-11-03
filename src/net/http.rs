@@ -29,6 +29,7 @@ pub async fn serve(addr: String, port: u16, state: AppState) -> oneshot::Receive
             .route("/events", get(routes::event::global_event_sub))
             .route("/instance/list", get(routes::instance::get::list_instances))
             .route("/instance/new", post(routes::instance::change::new_instance))
+            .route("/instance/:id/delete", post(routes::instance::del::del_instance))
             .layer(
                 TraceLayer::new_for_http()
                     .on_request(trace::DefaultOnRequest::new()

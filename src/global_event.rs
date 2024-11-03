@@ -8,6 +8,8 @@ use crate::instance::Instance;
 pub enum GlobalEvent {
     #[serde(rename = "modify-instance")]
     ModifyInstance { id: String, instance: Instance },
+    #[serde(rename = "delete-instance")]
+    DeleteInstance { id: String },
 }
 
 pub fn init_channel() -> broadcast::Sender<GlobalEvent> {

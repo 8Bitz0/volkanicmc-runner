@@ -93,6 +93,14 @@ impl JsonStorageProvider {
     pub async fn get_instance<I: std::fmt::Display>(&self, id: I) -> Option<Instance> {
         self.data.instances.get(&id.to_string()).cloned()
     }
+    /// `true` is returned if the instance was removed from storage
+    pub async fn del_instance<I: std::fmt::Display>(&mut self, id: I) -> Result<bool, Error> {
+        let deleted = self.data.instances.remove(&id.to_string()).is_some();
+
+        self.update().await?;
+
+        Ok(deleted)
+    }
     async fn load(&mut self) -> Result<(), Error> {
         let json_raw = fs::read_to_string(&self.path).await.map_err(Error::Io)?;
 

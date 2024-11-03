@@ -36,9 +36,15 @@ impl DockerInstanceProvider {
     pub async fn list_instance(&self) -> Result<InstanceList, Error> {
         self.storage.lock().await.list_instances().await.map_err(Error::Storage)
     }
-    // Returns the ID of the new instance
+    /// Returns the ID of the new instance
     pub async fn new_instance(&self, inst: InstanceRequest) -> Result<String, Error> {
         self.storage.lock().await.new_instance(inst).await.map_err(Error::Storage)
+    }
+    /// Returns whether the instance was deleted or not
+    pub async fn del_instance<I: std::fmt::Display>(&self, id: I) -> Result<bool, Error> {
+        let deleted = self.storage.lock().await.del_instance(id.to_string()).await.map_err(Error::Storage)?;
+
+        Ok(deleted)
     }
     pub async fn get_instance<I: std::fmt::Display>(&self, id: I) -> Option<Instance> {
         self.storage.lock().await.get_instance(id.to_string()).await
