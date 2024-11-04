@@ -1,4 +1,4 @@
-use axum::{routing::{get, post}, Router};
+use axum::{middleware, routing::{get, post}, Router};
 use tokio::sync::oneshot;
 use tower_http::trace::{self, TraceLayer};
 use tracing::{info, Level};
@@ -42,6 +42,7 @@ pub async fn serve(addr: String, port: u16, state: AppState) -> oneshot::Receive
                         .level(Level::ERROR)
                     )
             )
+            .layer(middleware::from_fn_with_state(state.clone(), super::middleware::latency))
             .with_state(state);
 
         info!("Binding to {}:{}", addr, port);

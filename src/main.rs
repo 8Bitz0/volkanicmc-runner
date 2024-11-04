@@ -21,12 +21,15 @@ struct Args {
     pub address: Option<String>,
     #[arg(short = 'p', long)]
     pub port: Option<u16>,
+    #[arg(long)]
+    pub add_latency: Option<u16>,
 }
 
 #[derive(Clone)]
 struct AppState {
     pub g_event_tx: broadcast::Sender<global_event::GlobalEvent>,
     pub instances: Arc<Mutex<instance::DockerInstanceProvider>>,
+    pub add_latency: Option<u16>,
 }
 
 #[tokio::main]
@@ -84,6 +87,7 @@ async fn main() {
     let app_state = AppState {
         g_event_tx,
         instances: instance_provider.clone(),
+        add_latency: args.add_latency,
     };
 
     let http_handle = net::http::serve(address, port, app_state).await;

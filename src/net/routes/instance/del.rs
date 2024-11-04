@@ -3,7 +3,7 @@ use axum::{
     http::StatusCode,
     response::IntoResponse
 };
-use tracing::error;
+use tracing::{error, info};
 
 use crate::{AppState, global_event::GlobalEvent};
 
@@ -12,6 +12,8 @@ pub async fn del_instance(
     Path(id): Path<String>,
 ) -> impl IntoResponse {
     tokio::spawn(async move {
+        info!("Instance deletion requested (\"{}\")", id);
+
         let instances_lock = state.instances.lock().await;
 
         match instances_lock.del_instance(&id).await {
