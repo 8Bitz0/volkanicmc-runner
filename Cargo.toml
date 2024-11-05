@@ -31,3 +31,4 @@ lto = "thin"
 opt-level = 3
 incremental = false
 debug = 0
+strip = true
