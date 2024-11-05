@@ -25,7 +25,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             address: "0.0.0.0".to_string(),
-            port: 8080,
+            port: 56088,
             storage: StorageConfig::default(),
         }
     }
