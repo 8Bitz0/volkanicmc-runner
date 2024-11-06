@@ -81,7 +81,7 @@ impl JsonStorageProvider {
         let new_instance = Instance {
             name: inst.name,
             inst_type: inst.inst_type,
-            status: InstanceStatus::Inactive,
+            status: InstanceStatus::Creating(0),
         };
 
         self.data.instances.insert(id.clone(), new_instance);
