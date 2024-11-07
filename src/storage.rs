@@ -15,7 +15,7 @@ use crate::{config::Config, instance::{Instance, InstanceList, InstanceRequest, 
 /// Maximum allowed number of attempts to generate a unique UUID for
 /// a new instance.
 /// 
-/// This is unlikely to ever be an issue, as there a total of 2^128
+/// This is unlikely to ever be an issue, as there is a total of 2^128
 /// possible combinations.
 const MAX_UUID_GEN_ITER: usize = 128;
 
