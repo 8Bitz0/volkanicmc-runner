@@ -55,7 +55,7 @@ async fn main() {
         }
     ));
 
-    let address = args.address.unwrap_or(String::from("127.0.0.1"));
+    let address = args.address.unwrap_or(app_config.lock().await.config.address.clone());
     let port = args.port.unwrap_or(app_config.lock().await.config.port);
 
     let g_event_tx = global_event::init_channel();
