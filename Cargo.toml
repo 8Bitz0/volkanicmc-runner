@@ -7,9 +7,11 @@ edition = "2021"
 async-stream = "0.3.6"
 axum = "0.7.7"
 bollard = "0.17.1"
+chrono = "0.4.38"
 clap = { version = "4.5.20", features = ["derive"] }
 futures-util = "0.3.31"
 hyper = "1.5.0"
+rand = "0.8.5"
 serde = { version = "1.0.214", features = ["derive"] }
 serde_jsonc = "1.0.108"
 thiserror = "1.0.68"

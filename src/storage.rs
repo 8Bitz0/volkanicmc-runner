@@ -8,16 +8,8 @@ use tokio::{
     io::AsyncWriteExt,
 };
 use tracing::error;
-use uuid::Uuid;
 
-use crate::{config::Config, instance::{Instance, InstanceList, InstanceRequest, InstanceStatus}};
-
-/// Maximum allowed number of attempts to generate a unique UUID for
-/// a new instance.
-/// 
-/// This is unlikely to ever be an issue, as there is a total of 2^128
-/// possible combinations.
-const MAX_UUID_GEN_ITER: usize = 128;
+use crate::{config::Config, instance::{StoredInstanceList, StoredInstance}};
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -31,16 +23,11 @@ pub enum Error {
     JsonEncode(serde_jsonc::Error),
     #[error("No JSON storage path set in config")]
     NoStoragePath,
-    #[error("Ran out of unique IDs")]
-    ExhaustedUniqueIds,
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 struct JsonData {
-    pub instances: HashMap<String, Instance>,
-    /// Maps Docker container IDs to instance IDs
-    #[serde(rename = "docker-container-map")]
-    pub docker_con_map: HashMap<String, String>,
+    pub instances: HashMap<String, StoredInstance>,
 }
 
 pub struct JsonStorageProvider {
@@ -72,25 +59,17 @@ impl JsonStorageProvider {
 
         Ok(store_file)
     }
-    pub async fn list_instances(&self) -> Result<InstanceList, Error> {
+    pub async fn list_instances(&self) -> Result<StoredInstanceList, Error> {
         Ok(self.data.instances.clone())
     }
-    pub async fn new_instance(&mut self, inst: InstanceRequest) -> Result<String, Error> {
-        let id = unique_id(self).await?;
-
-        let new_instance = Instance {
-            name: inst.name,
-            inst_type: inst.inst_type,
-            status: InstanceStatus::Creating(0),
-        };
-
-        self.data.instances.insert(id.clone(), new_instance);
+    pub async fn new_instance(&mut self, id: String, inst: StoredInstance) -> Result<(), Error> {
+        self.data.instances.insert(id, inst);
 
         self.update().await?;
 
-        Ok(id)
+        Ok(())
     }
-    pub async fn get_instance<I: std::fmt::Display>(&self, id: I) -> Option<Instance> {
+    pub async fn get_instance<I: std::fmt::Display>(&self, id: I) -> Option<StoredInstance> {
         self.data.instances.get(&id.to_string()).cloned()
     }
     /// `true` is returned if the instance was removed from storage
@@ -117,20 +96,4 @@ impl JsonStorageProvider {
 
         Ok(())
     }
-}
-
-async fn unique_id(storage: &JsonStorageProvider) -> Result<String, Error> {
-    for _ in 0..MAX_UUID_GEN_ITER {
-        let new_id = Uuid::new_v4().to_string();
-
-        if !storage.data.instances.contains_key(&new_id) {
-            return Ok(new_id);
-        }
-    }
-
-    error!(r#"Unable to create unique UUID. Either you have an astronomical
-    number of instances, or there may be a much deeper issue within the
-    built-in libraries or hardware."#);
-
-    Err(Error::ExhaustedUniqueIds)
 }

@@ -2,7 +2,11 @@
 #![forbid(unsafe_code)]
 
 use clap::Parser;
-use std::{path::PathBuf, sync::Arc};
+use std::{
+    collections::HashMap,
+    path::PathBuf,
+    sync::Arc
+};
 use tokio::sync::{broadcast, Mutex};
 use tracing::error;
 

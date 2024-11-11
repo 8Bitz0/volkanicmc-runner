@@ -2,12 +2,12 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
 use tracing::debug;
 
-use crate::instance::Instance;
+use crate::instance::PubInstance;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum GlobalEvent {
     #[serde(rename = "modify-instance")]
-    ModifyInstance { id: String, instance: Instance },
+    ModifyInstance { id: String, instance: PubInstance },
     #[serde(rename = "delete-instance")]
     DeleteInstance { id: String },
 }
