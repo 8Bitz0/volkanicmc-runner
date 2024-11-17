@@ -62,7 +62,7 @@ impl JsonStorageProvider {
     pub async fn list_instances(&self) -> Result<StoredInstanceList, Error> {
         Ok(self.data.instances.clone())
     }
-    pub async fn new_instance(&mut self, id: String, inst: StoredInstance) -> Result<(), Error> {
+    pub async fn update_instance(&mut self, id: String, inst: StoredInstance) -> Result<(), Error> {
         self.data.instances.insert(id, inst);
 
         self.update().await?;

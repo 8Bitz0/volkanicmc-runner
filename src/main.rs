@@ -76,7 +76,7 @@ async fn main() {
 
     let instance_provider = Arc::new(Mutex::new(
         match instance::DockerInstanceProvider::new(
-            /* app_config.clone(), */
+            app_config.clone(),
             g_event_tx.clone(),
             storage_provider.clone(),
         ).await {

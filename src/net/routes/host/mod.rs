@@ -1,10 +1,9 @@
-use axum::{
-    extract::{Request, State},
-    response::Response
-};
+use axum::extract::State;
 use hyper::{HeaderMap, StatusCode};
 
 use crate::AppState;
+
+pub mod definition;
 
 pub async fn auth(
     headers: HeaderMap,

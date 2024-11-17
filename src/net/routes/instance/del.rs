@@ -5,7 +5,7 @@ use axum::{
 };
 use tracing::{error, info};
 
-use crate::{AppState, global_event::GlobalEvent};
+use crate::AppState;
 
 pub async fn del_instance(
     State(state): State<AppState>,
@@ -17,10 +17,8 @@ pub async fn del_instance(
         let instances_lock = state.instances.lock().await;
 
         match instances_lock.del_instance(&id).await {
-            Ok(deleted) => {
-                if deleted {
-                    state.g_event_tx.send(GlobalEvent::DeleteInstance { id }).unwrap();
-                }
+            Ok(_) => {
+                info!("Instance deleted: {:?}", id);
             }
             Err(e) => {
                 error!("Error deleting instance: {}", e);

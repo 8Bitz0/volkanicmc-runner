@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
+use tokio::sync::{broadcast, Mutex};
 use tracing::error;
 use uuid::Uuid;
 
@@ -30,6 +31,10 @@ pub enum Error {
     InstanceNotFound(String),
     #[error("Ran out of unique IDs")]
     ExhaustedUniqueIds,
+    #[error("Container ID not found (container exists)")]
+    ContainerIdNotFound,
+    #[error("No container state")]
+    NoContainerState,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -45,15 +50,16 @@ pub struct StoredInstance {
     pub name: String,
     pub inst_type: InstanceType,
     pub host_com_token: String,
+    pub container_id: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum InstanceType {
     #[serde(rename = "volkanic")]
     Volkanic { source: VolkanicSource },
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum InstanceStatus {
     #[serde(rename = "inactive")]
     Inactive,
@@ -69,12 +75,14 @@ pub enum InstanceStatus {
     Stopping,
 }
 
+#[derive(Debug, Clone)]
 struct Instance {
-    pub name: String,
-    pub inst_type: InstanceType,
-    pub status: InstanceStatus,
-    pub host_com_token: String,
-    pub last_con: Option<chrono::NaiveDateTime>,
+    pub name: Arc<Mutex<String>>,
+    pub inst_type: Arc<Mutex<InstanceType>>,
+    pub status: Arc<Mutex<InstanceStatus>>,
+    pub host_com_token: Arc<Mutex<String>>,
+    pub last_con: Arc<Mutex<Option<chrono::NaiveDateTime>>>,
+    pub container_id: Arc<Mutex<Option<String>>>,
 }
 
 pub type PubInstanceList = HashMap<String, PubInstance>;

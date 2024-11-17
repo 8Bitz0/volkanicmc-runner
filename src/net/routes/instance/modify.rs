@@ -8,7 +8,6 @@ use tracing::{info, error};
 
 use crate::{
     AppState,
-    global_event::GlobalEvent,
     instance::InstanceRequest
 };
 
@@ -21,32 +20,14 @@ pub async fn new_instance(
     tokio::spawn(async move {
         let instances_lock = state.instances.lock().await;
         
-        let id = match instances_lock.new_instance(payload).await {
+        match instances_lock.new_instance(payload).await {
             Ok(id) => {
                 info!("New instance created (\"{}\")", id);
-    
-                id.clone()
             }
             Err(e) => {
                 error!("Error creating new instance: {}", e);
-
-                return;
             }
         };
-    
-        // Drops the lock, preventing a deadlock
-        drop(instances_lock);
-    
-        let new_instance = match state.instances.lock().await.get_instance(&id).await {
-            Some(o) => o,
-            None => {
-                error!("Failed to get the newly created instance (ID: \"{}\")", id);
-
-                return;
-            }
-        };
-    
-        state.g_event_tx.send(GlobalEvent::ModifyInstance { id: id.clone(), instance: new_instance }).unwrap();
     });
 
     (
