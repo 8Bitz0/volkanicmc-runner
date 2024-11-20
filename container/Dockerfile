@@ -6,7 +6,9 @@ RUN apt-get update --quiet && \
       ca-certificates \
       curl \
       gcc \
-      g++ && \
+      g++ \
+      libssl-dev \
+      pkg-config && \
     # Delete package cache to avoid consuming space in layer
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
@@ -40,17 +42,10 @@ RUN apt-get update --quiet && \
 COPY ./container/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Add user `volkanic` ensuring the runner is not given root privileges
-RUN useradd -s /bin/bash volkanic
-
 # Create needed directories and set permissions
 RUN mkdir /config && \
-    mkdir /vk-store && \
-    chown -R volkanic:volkanic /config && \
-    chown -R volkanic:volkanic /vk-store
+    mkdir /vk-store
 
 COPY --from=build /build/target/release/volkanicmc-runner /usr/bin/volkanicmc-runner
-
-USER volkanic
 
 ENTRYPOINT [ "/entrypoint.sh" ]

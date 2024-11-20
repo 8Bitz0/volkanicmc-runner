@@ -3,12 +3,11 @@
 
 use clap::Parser;
 use std::{
-    collections::HashMap,
     path::PathBuf,
-    sync::Arc
+    sync::{Arc, atomic::{AtomicBool, Ordering}},
 };
 use tokio::sync::{broadcast, Mutex};
-use tracing::error;
+use tracing::{debug, info, error};
 
 mod config;
 mod global_event;
@@ -49,8 +48,36 @@ async fn main() {
         }})
         .init();
 
+    let running = Arc::new(AtomicBool::new(true));
+    let r = running.clone();
+
+    ctrlc::set_handler(move || {
+        r.store(false, Ordering::SeqCst);
+    }).unwrap();
+
+    let mut interrupt = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt()).unwrap();
+    let mut terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()).unwrap();
+
+    tokio::select! {
+        _ = interrupt.recv() => {
+            debug!("Received SIGINT");
+            running.store(false, Ordering::SeqCst);
+        },
+        _ = terminate.recv() => {
+            info!("Received termination signal");
+            running.store(false, Ordering::SeqCst);
+        },
+        _ = run(args) => {},
+    };
+
+    info!("Shutting down...");
+
+    std::process::exit(0);
+}
+
+async fn run(args: Args) {
     let app_config = Arc::new(Mutex::new(
-        match config::ConfigFile::new(args.config_path).await {
+        match config::ConfigFile::new(args.config_path.clone()).await {
             Ok(o) => o,
             Err(e) => {
                 error!("Config error: {}", e);
@@ -59,7 +86,7 @@ async fn main() {
         }
     ));
 
-    let address = args.address.unwrap_or(app_config.lock().await.config.address.clone());
+    let address = args.address.clone().unwrap_or(app_config.lock().await.config.address.clone());
     let port = args.port.unwrap_or(app_config.lock().await.config.port);
 
     let g_event_tx = global_event::init_channel();
