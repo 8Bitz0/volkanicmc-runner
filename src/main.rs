@@ -55,16 +55,25 @@ async fn main() {
         r.store(false, Ordering::SeqCst);
     }).unwrap();
 
-    let mut interrupt = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt()).unwrap();
-    let mut terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()).unwrap();
+    #[cfg(unix)]
+    let shutdown = async {
+        let mut interrupt = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::interrupt()).unwrap();
+        let mut terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate()).unwrap();
+
+        tokio::select! {
+            _ = interrupt.recv() => debug!("Received SIGINT"),
+            _ = terminate.recv() => info!("Received termination signal"),
+        }
+    };
+
+    #[cfg(windows)]
+    let shutdown = async {
+        tokio::signal::ctrl_c().await.unwrap();
+        debug!("Received Ctrl+C");
+    };
 
     tokio::select! {
-        _ = interrupt.recv() => {
-            debug!("Received SIGINT");
-            running.store(false, Ordering::SeqCst);
-        },
-        _ = terminate.recv() => {
-            info!("Received termination signal");
+        _ = shutdown => {
             running.store(false, Ordering::SeqCst);
         },
         _ = run(args) => {},
