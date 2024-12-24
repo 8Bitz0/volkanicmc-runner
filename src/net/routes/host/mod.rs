@@ -4,6 +4,7 @@ use hyper::{HeaderMap, StatusCode};
 use crate::AppState;
 
 pub mod definition;
+pub mod event;
 
 pub async fn auth(
     headers: HeaderMap,

@@ -35,6 +35,7 @@ pub async fn serve(addr: String, port: u16, state: AppState) -> oneshot::Receive
             .route("/internal/host/auth", post(routes::host::auth))
             .route("/internal/host/check", post(routes::host::heartbeat))
             .route("/internal/host/def", get(routes::host::definition::get_def))
+            .route("/internal/host/event", get(routes::host::event::host_event_sub))
             .layer(
                 TraceLayer::new_for_http()
                     .on_request(trace::DefaultOnRequest::new()

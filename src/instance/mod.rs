@@ -9,7 +9,7 @@ use crate::storage;
 mod docker;
 mod volkanic;
 
-pub use docker::DockerInstanceProvider;
+pub use docker::{DockerInstanceProvider, HostEvent};
 pub use volkanic::VolkanicSource;
 
 /// Maximum allowed number of attempts to generate a unique UUID for
@@ -21,8 +21,6 @@ const MAX_UUID_GEN_ITER: usize = 128;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error("{0}")]
-    Generic(String),
     #[error("Docker error: {0}")]
     Docker(bollard::errors::Error),
     #[error("Storage error: {0}")]
@@ -83,6 +81,7 @@ struct Instance {
     pub host_com_token: Arc<Mutex<String>>,
     pub last_con: Arc<Mutex<Option<chrono::NaiveDateTime>>>,
     pub container_id: Arc<Mutex<Option<String>>>,
+    pub host_com_tx: broadcast::Sender<HostEvent>,
 }
 
 pub type PubInstanceList = HashMap<String, PubInstance>;

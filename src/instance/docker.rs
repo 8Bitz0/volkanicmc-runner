@@ -4,6 +4,7 @@ use bollard::{
 };
 use futures_util::future::join_all;
 use rand::Rng;
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 use tokio::{sync::{broadcast, Mutex}, task::JoinHandle};
 use tracing::{debug, info, error};
@@ -41,6 +42,13 @@ pub struct DockerInstanceProvider {
     bg_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
 }
 
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub enum HostEvent {
+    /// Expects the host to gracefully stop the instance and wait
+    #[serde(rename = "stop")]
+    Stop,
+}
+
 impl DockerInstanceProvider {
     pub async fn new(
         config: Arc<Mutex<ConfigFile>>,
@@ -75,6 +83,7 @@ impl DockerInstanceProvider {
                 host_com_token: Arc::new(Mutex::new(inst.host_com_token.clone())),
                 last_con: Arc::new(Mutex::new(None)),
                 container_id: Arc::new(Mutex::new(inst.container_id.clone())),
+                host_com_tx: broadcast::channel(255).0,
             };
 
             debug!(instance_id = id.as_str(), "Loaded instance from storage");
@@ -119,6 +128,7 @@ impl DockerInstanceProvider {
             host_com_token: Arc::new(Mutex::new(token.clone())),
             last_con: Arc::new(Mutex::new(None)),
             container_id: Arc::new(Mutex::new(None)),
+            host_com_tx: broadcast::channel(255).0,
         };
 
         self.instances.lock().await.insert(id.clone(), new_instance.clone());
@@ -238,6 +248,12 @@ impl DockerInstanceProvider {
 
         Ok(())
     }
+    pub async fn get_host_event_tx(&self, id: impl std::fmt::Display) -> Option<broadcast::Sender<HostEvent>> {
+        let instances = self.instances.lock().await;
+        let inst = instances.get(&id.to_string())?;
+        
+        Some(inst.host_com_tx.clone())
+    }
     async fn start_host(&self, id: impl std::fmt::Display) -> Result<(), Error> {
         let id = id.to_string();
 
@@ -308,7 +324,14 @@ impl DockerInstanceProvider {
         let container_id = inst.container_id.lock().await.clone();
 
         if let Some(container_id) = container_id {
-            self.docker_handle.stop_container(&container_id, None::<container::StopContainerOptions>).await.map_err(Error::Docker)?;
+            match inst.host_com_tx.send(HostEvent::Stop) {
+                Ok(_) => {}
+                Err(e) => {
+                    error!("Error while sending host communication signal: {}", e);
+                }
+            };
+            
+            // self.docker_handle.stop_container(&container_id, None::<container::StopContainerOptions>).await.map_err(Error::Docker)?;
         } else {
             error!("No container attached to instance {}", id);
         };

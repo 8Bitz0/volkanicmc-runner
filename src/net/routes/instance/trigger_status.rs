@@ -3,7 +3,6 @@ use axum::{
     http::StatusCode,
     response::IntoResponse
 };
-use tracing::error;
 
 use crate::AppState;
 
